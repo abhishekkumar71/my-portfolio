@@ -35,10 +35,11 @@ export default function Hero() {
             transition={{ duration: 0.4, delay: 0.2 }}
             className="text-slate-400 text-lg leading-relaxed"
           >
-            I'm a full-stack developer who likes building products that actually
-            work. I've shipped real projects, debugged things that shouldn't
-            have broken, and figured out solutions when there was no clear path.
-            Open to full-time roles where I can do more of the same.
+            I&apos;m a full-stack developer who likes building products that
+            actually work. I&apos;ve shipped real projects, debugged things that
+            shouldn&apos;t have broken, and figured out solutions when there was
+            no clear path. Open to full-time roles where I can do more of the
+            same.
           </motion.p>
 
           <motion.div
