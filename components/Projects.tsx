@@ -32,7 +32,6 @@ const projects = [
     github: "https://github.com/abhishekkumar71/TradeEasy",
     image: "/tradeeasy.png",
   },
-
   {
     title: "Earthquake Visualizer",
     description:
@@ -53,6 +52,227 @@ const projects = [
   },
 ];
 
+// ── Mobile peeling stack ────────────────────────────────────────────────────
+function MobileStack() {
+  const [topIndex, setTopIndex] = useState(0);
+  // dragY: how far the top card has been pulled (negative = up)
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [flying, setFlying] = useState(false); // card is animating off
+  const [flyDir, setFlyDir] = useState<1 | -1>(1); // 1=up, -1=down
+  const touchStartY = useRef(0);
+  const THRESHOLD = 80; // px to trigger peel
+
+  const remaining = projects.length - topIndex;
+  const done = topIndex >= projects.length;
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (flying || done) return;
+    touchStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || flying || done) return;
+    const dy = e.touches[0].clientY - touchStartY.current;
+    // allow full upward drag, resist downward
+    setDragY(dy < 0 ? dy : dy * 0.15);
+  };
+
+  const handleTouchEnd = () => {
+    if (!isDragging || flying || done) return;
+    setIsDragging(false);
+
+    if (dragY < -THRESHOLD) {
+      // peel off upward
+      setFlyDir(1);
+      setFlying(true);
+      setTimeout(() => {
+        setTopIndex((i) => i + 1);
+        setDragY(0);
+        setFlying(false);
+      }, 350);
+    } else {
+      // snap back
+      setDragY(0);
+    }
+  };
+
+  const peekCards = Math.min(remaining - 1, 2); // cards peeking behind top
+
+  return (
+    <div className="px-6 py-20 flex flex-col items-center gap-8">
+      <p className="text-3xl font-bold text-white self-start">Projects</p>
+
+      {done ? (
+        <div className="flex flex-col items-center gap-4 py-20">
+          <p className="text-slate-400 text-sm">All projects viewed</p>
+          <button
+            onClick={() => {
+              setTopIndex(0);
+              setDragY(0);
+            }}
+            className="px-4 py-2 border border-slate-600 text-slate-300 rounded-lg text-xs hover:border-cyan-500 hover:text-cyan-400 transition-colors"
+          >
+            Start over
+          </button>
+        </div>
+      ) : (
+        <div className="relative w-full" style={{ height: 540 }}>
+          {/* Peeking cards behind */}
+          {Array.from({ length: peekCards }).map((_, offset) => {
+            const depth = peekCards - offset; // 2,1 → furthest first
+            return (
+              <div
+                key={`peek-${topIndex + depth}`}
+                className="absolute inset-x-0 border border-slate-700 rounded-xl overflow-hidden bg-slate-900"
+                style={{
+                  top: depth * 10,
+                  transform: `scale(${1 - depth * 0.04})`,
+                  transformOrigin: "top center",
+                  zIndex: 10 - depth,
+                  opacity: 1 - depth * 0.25,
+                }}
+              />
+            );
+          })}
+
+          {/* Top (active) card */}
+          <div
+            className="absolute inset-x-0"
+            style={{
+              zIndex: 20,
+              transform: flying
+                ? `translateY(-110%) rotate(${flyDir * -4}deg)`
+                : `translateY(${dragY}px) rotate(${dragY * 0.03}deg)`,
+              transition: flying
+                ? "transform 0.35s cubic-bezier(0.4,0,0.2,1)"
+                : isDragging
+                  ? "none"
+                  : "transform 0.3s cubic-bezier(0.34,1.56,0.64,1)",
+              cursor: "grab",
+              touchAction: "none",
+            }}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+          >
+            <ProjectCard proj={projects[topIndex]} index={topIndex} />
+          </div>
+
+          {/* Swipe hint */}
+          {remaining > 1 && !isDragging && dragY === 0 && !flying && (
+            <div
+              className="absolute bottom-0 left-0 right-0 flex justify-center pb-2"
+              style={{ zIndex: 30, pointerEvents: "none" }}
+            >
+              <span className="text-xs text-slate-500 animate-bounce">
+                swipe up ↑
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Progress dots */}
+      {!done && (
+        <div className="flex gap-2">
+          {projects.map((_, i) => (
+            <div
+              key={i}
+              className={`rounded-full transition-all duration-300 ${
+                i === topIndex
+                  ? "w-4 h-2 bg-cyan-400"
+                  : i < topIndex
+                    ? "w-2 h-2 bg-slate-600"
+                    : "w-2 h-2 bg-slate-700"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ProjectCard({
+  proj,
+  index,
+}: {
+  proj: (typeof projects)[number];
+  index: number;
+}) {
+  return (
+    <div className="border border-slate-700 rounded-xl overflow-hidden bg-slate-900 select-none">
+      {proj.image ? (
+        <Image
+          src={proj.image}
+          alt={proj.title}
+          width={700}
+          height={400}
+          draggable={false}
+          className="w-full h-44 object-cover object-top pointer-events-none"
+        />
+      ) : (
+        <div className="bg-slate-900 p-4 font-mono text-xs text-green-400 h-44 flex flex-col justify-center gap-1 pointer-events-none">
+          <p>
+            <span className="text-slate-500">$</span> python jarvis.py
+          </p>
+          <p className="text-slate-400">Initializing Jarvis...</p>
+          <p>
+            <span className="text-slate-500">&gt;</span> jarvis
+          </p>
+          <p className="text-slate-400">ya</p>
+          <p>
+            <span className="text-slate-500">&gt;</span> open youtube
+          </p>
+          <p className="text-slate-400">Opening YouTube...</p>
+        </div>
+      )}
+      <div className="p-5 flex flex-col gap-3">
+        <p className="text-cyan-400 text-xs tracking-widest uppercase">
+          {String(index + 1).padStart(2, "0")} /{" "}
+          {String(projects.length).padStart(2, "0")}
+        </p>
+        <h3 className="text-xl font-bold text-white">{proj.title}</h3>
+        <p className="text-slate-400 text-sm leading-relaxed">
+          {proj.description}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {proj.tech.map((t) => (
+            <span
+              key={t}
+              className="px-2 py-1 text-xs bg-cyan-500/10 text-cyan-400 rounded-full border border-cyan-500/20"
+            >
+              {t}
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-3 mt-1">
+          {proj.live && (
+            <a
+              href={proj.live}
+              target="_blank"
+              className="px-4 py-2 bg-cyan-500 text-slate-950 font-semibold rounded-lg text-xs"
+            >
+              Live Demo ↗
+            </a>
+          )}
+
+          <a
+            href={proj.github}
+            target="_blank"
+            className="px-4 py-2 border border-slate-600 text-slate-300 font-semibold rounded-lg text-xs hover:border-cyan-500 hover:text-cyan-400 transition-colors duration-200"
+          >
+            GitHub ↗
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Main export ─────────────────────────────────────────────────────────────
 export default function Projects() {
   const [active, setActive] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -64,6 +284,7 @@ export default function Projects() {
     activeRef.current = val;
     setActive(val);
   };
+
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
@@ -71,17 +292,13 @@ export default function Projects() {
     const handleWheel = (e: WheelEvent) => {
       const rect = section.getBoundingClientRect();
       const inSection = rect.top <= 0 && rect.bottom > window.innerHeight;
-
       if (!inSection) return;
-
       e.preventDefault();
-
       if (Math.abs(e.deltaY) < 30) return;
       if (isScrolling.current) return;
 
       if (e.deltaY > 0) {
         if (activeRef.current < projects.length - 1) {
-          // go to next project
           isScrolling.current = true;
           setDirection(1);
           setActiveProject(activeRef.current + 1);
@@ -89,7 +306,6 @@ export default function Projects() {
             isScrolling.current = false;
           }, 800);
         } else {
-          // on last project, scroll past section
           isScrolling.current = true;
           window.scrollTo({
             top: section.offsetTop + section.offsetHeight,
@@ -101,7 +317,6 @@ export default function Projects() {
         }
       } else if (e.deltaY < 0) {
         if (activeRef.current > 0) {
-          // go to previous project
           isScrolling.current = true;
           setDirection(-1);
           setActiveProject(activeRef.current - 1);
@@ -109,7 +324,6 @@ export default function Projects() {
             isScrolling.current = false;
           }, 800);
         } else {
-          // on first project, scroll past section upward
           isScrolling.current = true;
           window.scrollTo({
             top: section.offsetTop - window.innerHeight,
@@ -121,6 +335,7 @@ export default function Projects() {
         }
       }
     };
+
     window.addEventListener("wheel", handleWheel, { passive: false });
     return () => window.removeEventListener("wheel", handleWheel);
   }, []);
@@ -132,100 +347,20 @@ export default function Projects() {
   };
 
   const project = projects[active];
-  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
-  }, []);
   return (
     <section
       id="projects"
       ref={sectionRef}
       className={`relative ${raleway.className}`}
-      style={{ height: isMobile ? "auto" : "500vh" }}
     >
-      {isMobile ? (
-        <div className="px-6 py-20 flex flex-col gap-8">
-          <p className="text-3xl font-bold text-white">Projects</p>
-          {projects.map((proj, i) => (
-            <motion.div
-              key={proj.title}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ duration: 0.4, delay: i * 0.1 }}
-              className="border border-slate-700 rounded-xl overflow-hidden"
-            >
-              {proj.image ? (
-                <Image
-                  src={proj.image}
-                  alt={proj.title}
-                  width={700}
-                  height={400}
-                  className="w-full h-44 object-cover object-top"
-                />
-              ) : (
-                <div className="bg-slate-900 p-4 font-mono text-xs text-green-400 h-44 flex flex-col justify-center gap-1">
-                  <p>
-                    <span className="text-slate-500">$</span> python jarvis.py
-                  </p>
-                  <p className="text-slate-400">Initializing Jarvis...</p>
-                  <p>
-                    <span className="text-slate-500">&gt;</span> jarvis
-                  </p>
-                  <p className="text-slate-400">ya</p>
-                  <p>
-                    <span className="text-slate-500">&gt;</span> open youtube
-                  </p>
-                  <p className="text-slate-400">Opening YouTube...</p>
-                </div>
-              )}
-              <div className="p-5 flex flex-col gap-3">
-                <p className="text-cyan-400 text-xs tracking-widest uppercase">
-                  {String(i + 1).padStart(2, "0")} /{" "}
-                  {String(projects.length).padStart(2, "0")}
-                </p>
-                <h3 className="text-xl font-bold text-white">{proj.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">
-                  {proj.description}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  {proj.tech.map((t) => (
-                    <span
-                      key={t}
-                      className="px-2 py-1 text-xs bg-cyan-500/10 text-cyan-400 rounded-full border border-cyan-500/20"
-                    >
-                      {t}
-                    </span>
-                  ))}
-                </div>
-                <div className="flex gap-3 mt-1">
-                  {proj.live && (
-                    <a
-                      href={proj.live}
-                      target="_blank"
-                      className="px-4 py-2 bg-cyan-500 text-slate-950 font-semibold rounded-lg text-xs"
-                    >
-                      Live Demo ↗
-                    </a>
-                  )}
-                  <a
-                    href={proj.github}
-                    target="_blank"
-                    className="px-4 py-2 border border-slate-600 text-slate-300 font-semibold rounded-lg text-xs hover:border-cyan-500 hover:text-cyan-400 transition-colors duration-200"
-                  >
-                    GitHub ↗
-                  </a>
-                </div>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      ) : (
-        // Desktop — untouched
+      {/* ── Mobile ── */}
+      <div className="md:hidden">
+        <MobileStack />
+      </div>
+
+      {/* ── Desktop (untouched, hidden on mobile) ── */}
+      <div className="hidden md:block" style={{ height: "500vh" }}>
         <div className="sticky top-0 h-screen overflow-hidden px-6 md:px-20 pt-20 flex flex-col justify-center">
           <p className="absolute top-8 left-6 md:left-20 text-3xl font-bold text-white">
             Projects
@@ -238,7 +373,9 @@ export default function Projects() {
                   setDirection(i > activeRef.current ? 1 : -1);
                   setActiveProject(i);
                 }}
-                className={`w-2 h-2 rounded-full transition-colors duration-300 ${i === active ? "bg-cyan-400" : "bg-slate-600"}`}
+                className={`w-2 h-2 rounded-full transition-colors duration-300 ${
+                  i === active ? "bg-cyan-400" : "bg-slate-600"
+                }`}
               />
             ))}
           </div>
@@ -284,6 +421,7 @@ export default function Projects() {
                       Live Demo ↗
                     </a>
                   )}
+
                   <a
                     href={project.github}
                     target="_blank"
@@ -330,7 +468,7 @@ export default function Projects() {
             </motion.div>
           </AnimatePresence>
         </div>
-      )}
+      </div>
     </section>
   );
 }
