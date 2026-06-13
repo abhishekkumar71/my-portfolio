@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { raleway } from "@/app/ui/fonts";
@@ -52,53 +52,70 @@ const projects = [
   },
 ];
 
-// ── Mobile peeling stack ────────────────────────────────────────────────────
-function MobileStack() {
-  const [topIndex, setTopIndex] = useState(0);
-  // dragY: how far the top card has been pulled (negative = up)
-  const [dragY, setDragY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [flying, setFlying] = useState(false); // card is animating off
-  const [flyDir, setFlyDir] = useState<1 | -1>(1); // 1=up, -1=down
-  const touchStartY = useRef(0);
-  const THRESHOLD = 80; // px to trigger peel
+// ── Tinder-style swipe stack (mobile) ──────────────────────────────────────
+function TinderStack() {
+  // stack: indices of projects still in deck (top = last element)
+  const [deck, setDeck] = useState(projects.map((_, i) => i));
+  const [gone, setGone] = useState<number[]>([]); // swiped-away indices
 
-  const remaining = projects.length - topIndex;
-  const done = topIndex >= projects.length;
+  // active drag state for the top card
+  const [drag, setDrag] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [flyDir, setFlyDir] = useState<null | "left" | "right">(null);
+
+  const touchStart = useRef({ x: 0, y: 0 });
+  const THRESHOLD = 90; // px horizontal to trigger swipe
+
+  const topIdx = deck[deck.length - 1];
+  const done = deck.length === 0;
+
+  // rotation proportional to horizontal drag, capped at ±15deg
+  const rotate = Math.min(15, Math.max(-15, drag.x * 0.12));
+  // opacity of like/nope badges
+  const likeOpacity = Math.min(1, Math.max(0, drag.x / THRESHOLD));
+  const nopeOpacity = Math.min(1, Math.max(0, -drag.x / THRESHOLD));
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (flying || done) return;
-    touchStartY.current = e.touches[0].clientY;
+    if (flyDir || done) return;
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     setIsDragging(true);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging || flying || done) return;
-    const dy = e.touches[0].clientY - touchStartY.current;
-    // allow full upward drag, resist downward
-    setDragY(dy < 0 ? dy : dy * 0.15);
+    if (!isDragging || flyDir || done) return;
+    setDrag({
+      x: e.touches[0].clientX - touchStart.current.x,
+      y: (e.touches[0].clientY - touchStart.current.y) * 0.3,
+    });
   };
 
   const handleTouchEnd = () => {
-    if (!isDragging || flying || done) return;
+    if (!isDragging || flyDir || done) return;
     setIsDragging(false);
 
-    if (dragY < -THRESHOLD) {
-      // peel off upward
-      setFlyDir(1);
-      setFlying(true);
+    if (Math.abs(drag.x) >= THRESHOLD) {
+      const dir = drag.x > 0 ? "right" : "left";
+      setFlyDir(dir);
       setTimeout(() => {
-        setTopIndex((i) => i + 1);
-        setDragY(0);
-        setFlying(false);
+        setGone((g) => [...g, topIdx]);
+        setDeck((d) => d.slice(0, -1));
+        setDrag({ x: 0, y: 0 });
+        setFlyDir(null);
       }, 350);
     } else {
-      // snap back
-      setDragY(0);
+      setDrag({ x: 0, y: 0 });
     }
   };
 
-  const peekCards = Math.min(remaining - 1, 2); // cards peeking behind top
+  const reset = () => {
+    setDeck(projects.map((_, i) => i));
+    setGone([]);
+    setDrag({ x: 0, y: 0 });
+    setFlyDir(null);
+  };
+
+  // cards peeking behind (up to 2)
+  const peekCount = Math.min(deck.length - 1, 2);
 
   return (
     <div className="px-6 py-20 flex flex-col items-center gap-8">
@@ -108,30 +125,28 @@ function MobileStack() {
         <div className="flex flex-col items-center gap-4 py-20">
           <p className="text-slate-400 text-sm">All projects viewed</p>
           <button
-            onClick={() => {
-              setTopIndex(0);
-              setDragY(0);
-            }}
+            onClick={reset}
             className="px-4 py-2 border border-slate-600 text-slate-300 rounded-lg text-xs hover:border-cyan-500 hover:text-cyan-400 transition-colors"
           >
             Start over
           </button>
         </div>
       ) : (
-        <div className="relative w-full" style={{ height: 540 }}>
-          {/* Peeking cards behind */}
-          {Array.from({ length: peekCards }).map((_, offset) => {
-            const depth = peekCards - offset; // 2,1 → furthest first
+        <div className="relative w-full" style={{ height: 560 }}>
+          {/* Peeking cards */}
+          {Array.from({ length: peekCount }).map((_, offset) => {
+            const depth = peekCount - offset;
+            const peekIdx = deck[deck.length - 1 - depth];
             return (
               <div
-                key={`peek-${topIndex + depth}`}
+                key={`peek-${peekIdx}`}
                 className="absolute inset-x-0 border border-slate-700 rounded-xl overflow-hidden bg-slate-900"
                 style={{
                   top: depth * 10,
                   transform: `scale(${1 - depth * 0.04})`,
                   transformOrigin: "top center",
                   zIndex: 10 - depth,
-                  opacity: 1 - depth * 0.25,
+                  opacity: 1 - depth * 0.2,
                 }}
               />
             );
@@ -142,10 +157,10 @@ function MobileStack() {
             className="absolute inset-x-0"
             style={{
               zIndex: 20,
-              transform: flying
-                ? `translateY(-110%) rotate(${flyDir * -4}deg)`
-                : `translateY(${dragY}px) rotate(${dragY * 0.03}deg)`,
-              transition: flying
+              transform: flyDir
+                ? `translateX(${flyDir === "right" ? "120%" : "-120%"}) rotate(${flyDir === "right" ? 20 : -20}deg)`
+                : `translateX(${drag.x}px) translateY(${drag.y}px) rotate(${rotate}deg)`,
+              transition: flyDir
                 ? "transform 0.35s cubic-bezier(0.4,0,0.2,1)"
                 : isDragging
                   ? "none"
@@ -157,17 +172,32 @@ function MobileStack() {
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            <ProjectCard proj={projects[topIndex]} index={topIndex} />
+            {/* LIKE badge */}
+            <div
+              className="absolute top-5 left-5 z-30 border-2 border-green-400 text-green-400 font-bold text-sm px-3 py-1 rounded-md rotate-[-15deg] pointer-events-none"
+              style={{ opacity: likeOpacity }}
+            >
+              LIKE
+            </div>
+            {/* NOPE badge */}
+            <div
+              className="absolute top-5 right-5 z-30 border-2 border-red-400 text-red-400 font-bold text-sm px-3 py-1 rounded-md rotate-[15deg] pointer-events-none"
+              style={{ opacity: nopeOpacity }}
+            >
+              NOPE
+            </div>
+
+            <ProjectCard proj={projects[topIdx]} index={gone.length} />
           </div>
 
           {/* Swipe hint */}
-          {remaining > 1 && !isDragging && dragY === 0 && !flying && (
+          {deck.length > 1 && !isDragging && drag.x === 0 && !flyDir && (
             <div
               className="absolute bottom-0 left-0 right-0 flex justify-center pb-2"
               style={{ zIndex: 30, pointerEvents: "none" }}
             >
-              <span className="text-xs text-slate-500 animate-bounce">
-                swipe up ↑
+              <span className="text-xs text-slate-500 animate-pulse">
+                ← swipe to browse →
               </span>
             </div>
           )}
@@ -181,10 +211,10 @@ function MobileStack() {
             <div
               key={i}
               className={`rounded-full transition-all duration-300 ${
-                i === topIndex
-                  ? "w-4 h-2 bg-cyan-400"
-                  : i < topIndex
-                    ? "w-2 h-2 bg-slate-600"
+                gone.includes(i)
+                  ? "w-2 h-2 bg-slate-600"
+                  : i === topIdx
+                    ? "w-4 h-2 bg-cyan-400"
                     : "w-2 h-2 bg-slate-700"
               }`}
             />
@@ -258,7 +288,6 @@ function ProjectCard({
               Live Demo ↗
             </a>
           )}
-
           <a
             href={proj.github}
             target="_blank"
@@ -285,7 +314,7 @@ export default function Projects() {
     setActive(val);
   };
 
-  useEffect(() => {
+  React.useEffect(() => {
     const section = sectionRef.current;
     if (!section) return;
 
@@ -354,9 +383,9 @@ export default function Projects() {
       ref={sectionRef}
       className={`relative ${raleway.className}`}
     >
-      {/* ── Mobile ── */}
+      {/* ── Mobile: Tinder swipe stack ── */}
       <div className="md:hidden">
-        <MobileStack />
+        <TinderStack />
       </div>
 
       {/* ── Desktop (untouched, hidden on mobile) ── */}
@@ -421,7 +450,6 @@ export default function Projects() {
                       Live Demo ↗
                     </a>
                   )}
-
                   <a
                     href={project.github}
                     target="_blank"
