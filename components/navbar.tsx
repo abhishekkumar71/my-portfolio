@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { raleway } from "@/app/ui/fonts";
-import Image from "next/image";
+
 import {
   motion,
   useScroll,
@@ -23,7 +23,6 @@ export default function Navbar() {
   const handleMenu = () => {
     setMenu(!menu);
   };
-  const [show, setShow] = useState(true);
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
   const menuVariants = {
