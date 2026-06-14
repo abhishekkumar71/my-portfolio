@@ -94,15 +94,14 @@ function MobileStack() {
       const dir = drag.x > 0 ? "right" : "left";
       setFlyDir(dir);
       setTimeout(() => {
-        if (dir === "left" && topIdx < projects.length - 1) {
-          // left = next project
+        if (dir === "left") {
+          setGone((g) => [...g, topIdx]);
           setDeck((d) => d.slice(0, -1));
         } else if (dir === "right" && gone.length > 0) {
-          // right = previous project
           const last = gone[gone.length - 1];
           setGone((g) => g.slice(0, -1));
           setDeck((d) => [...d, last]);
-        }
+        } 
         setDrag({ x: 0, y: 0 });
         setFlyDir(null);
       }, 350);
@@ -118,7 +117,6 @@ function MobileStack() {
     setFlyDir(null);
   };
 
-  // cards peeking behind (up to 2)
   const peekCount = Math.min(deck.length - 1, 2);
 
   return (
