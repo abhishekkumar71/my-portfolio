@@ -18,9 +18,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Abhishek Kumar - Software Engineer",
   description: "Portfolio of Abhishek Kumar",
+  icons: {
+    icon: "/favicon.png",
+  },
 };
 
-export default function RootLayout({children}: {children: React.ReactNode}) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>

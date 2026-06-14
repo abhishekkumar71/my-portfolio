@@ -52,19 +52,16 @@ const projects = [
   },
 ];
 
-// ── Tinder-style swipe stack (mobile) ──────────────────────────────────────
-function TinderStack() {
-  // stack: indices of projects still in deck (top = last element)
-  const [deck, setDeck] = useState(projects.map((_, i) => i));
-  const [gone, setGone] = useState<number[]>([]); // swiped-away indices
+function MobileStack() {
+  const [deck, setDeck] = useState(projects.map((_, i) => i).reverse());
+  const [gone, setGone] = useState<number[]>([]);
 
-  // active drag state for the top card
   const [drag, setDrag] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [flyDir, setFlyDir] = useState<null | "left" | "right">(null);
 
   const touchStart = useRef({ x: 0, y: 0 });
-  const THRESHOLD = 90; // px horizontal to trigger swipe
+  const THRESHOLD = 90;
 
   const topIdx = deck[deck.length - 1];
   const done = deck.length === 0;
@@ -97,8 +94,15 @@ function TinderStack() {
       const dir = drag.x > 0 ? "right" : "left";
       setFlyDir(dir);
       setTimeout(() => {
-        setGone((g) => [...g, topIdx]);
-        setDeck((d) => d.slice(0, -1));
+        if (dir === "left" && topIdx < projects.length - 1) {
+          // left = next project
+          setDeck((d) => d.slice(0, -1));
+        } else if (dir === "right" && gone.length > 0) {
+          // right = previous project
+          const last = gone[gone.length - 1];
+          setGone((g) => g.slice(0, -1));
+          setDeck((d) => [...d, last]);
+        }
         setDrag({ x: 0, y: 0 });
         setFlyDir(null);
       }, 350);
@@ -172,19 +176,17 @@ function TinderStack() {
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
           >
-            {/* LIKE badge */}
             <div
               className="absolute top-5 left-5 z-30 border-2 border-green-400 text-green-400 font-bold text-sm px-3 py-1 rounded-md rotate-[-15deg] pointer-events-none"
               style={{ opacity: likeOpacity }}
             >
-              LIKE
+              PREV
             </div>
-            {/* NOPE badge */}
             <div
               className="absolute top-5 right-5 z-30 border-2 border-red-400 text-red-400 font-bold text-sm px-3 py-1 rounded-md rotate-[15deg] pointer-events-none"
               style={{ opacity: nopeOpacity }}
             >
-              NOPE
+              NEXT
             </div>
 
             <ProjectCard proj={projects[topIdx]} index={gone.length} />
@@ -197,7 +199,7 @@ function TinderStack() {
               style={{ zIndex: 30, pointerEvents: "none" }}
             >
               <span className="text-xs text-slate-500 animate-pulse">
-                ← swipe to browse →
+                ← prev | next →{" "}
               </span>
             </div>
           )}
@@ -301,7 +303,6 @@ function ProjectCard({
   );
 }
 
-// ── Main export ─────────────────────────────────────────────────────────────
 export default function Projects() {
   const [active, setActive] = useState(0);
   const [direction, setDirection] = useState(1);
@@ -383,12 +384,12 @@ export default function Projects() {
       ref={sectionRef}
       className={`relative ${raleway.className}`}
     >
-      {/* ── Mobile: Tinder swipe stack ── */}
+      {/* Mobile*/}
       <div className="md:hidden">
-        <TinderStack />
+        <MobileStack />
       </div>
 
-      {/* ── Desktop (untouched, hidden on mobile) ── */}
+      {/* Desktop */}
       <div className="hidden md:block" style={{ height: "500vh" }}>
         <div className="sticky top-0 h-screen overflow-hidden px-6 md:px-20 pt-20 flex flex-col justify-center">
           <p className="absolute top-8 left-6 md:left-20 text-3xl font-bold text-white">
