@@ -2,22 +2,32 @@
 import React from "react";
 import GitHubIcon from "@mui/icons-material/GitHub";
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import EmailIcon from "@mui/icons-material/Email";
 import { raleway } from "@/app/ui/fonts";
 
 const socialLinks = [
   { href: "https://github.com/abhishekkumar71", icon: <GitHubIcon /> },
-  { href: "https://www.linkedin.com/in/abhishek-kumar5471/", icon: <LinkedInIcon /> },
+  {
+    href: "https://www.linkedin.com/in/abhishek-kumar5471/",
+    icon: <LinkedInIcon />,
+  },
+  {
+    href: "https://mail.google.com/mail/?view=cm&to=marsakatlaabhishek7168@gmail.com",
+    icon: <EmailIcon />,
+  },
 ];
 
 export default function Footer() {
   return (
-    <footer className={`px-6 md:px-20 py-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 ${raleway.className}`}>
+    <footer
+      className={`px-6 md:px-20 py-8 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 ${raleway.className}`}
+    >
       <p className="text-slate-500 text-sm">
         Designed and Built by Abhishek Kumar
       </p>
       <div className="flex gap-4">
         {socialLinks.map((item) => (
-            <a
+          <a
             key={item.href}
             href={item.href}
             target="_blank"

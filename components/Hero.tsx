@@ -7,17 +7,18 @@ import { raleway } from "@/app/ui/fonts";
 export default function Hero() {
   return (
     <section
-      className={`min-h-screen flex flex-col justify-center px-6 md:px-30 pt-24 pb-16 ${raleway.className}`}
+      id="hero"
+      className={`min-h-screen flex flex-col justify-center px-6 md:px-30 pt-20 pb-8 md:pt-24 md:pb-16 ${raleway.className}`}
     >
-      <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-12">
-        <div className="flex flex-col gap-6 max-w-xl">
+      <div className="flex flex-col-reverse md:flex-row items-center justify-between gap-6 md:gap-12">
+        <div className="flex flex-col gap-4 md:gap-6 max-w-xl">
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
             className="text-cyan-400 text-sm tracking-widest uppercase"
           >
-            Full Stack Developer
+            Software Engineer{" "}
           </motion.p>
 
           <motion.h1
@@ -33,7 +34,7 @@ export default function Hero() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.2 }}
-            className="text-slate-400 text-lg leading-relaxed"
+            className="text-slate-400 text-base md:text-lg leading-relaxed"
           >
             I&apos;m a full-stack developer who likes building products that
             actually work. I&apos;ve shipped real projects, debugged things that
@@ -76,7 +77,7 @@ export default function Hero() {
             src="/profilePic2.png"
             alt="Abhishek Kumar"
             fill
-            className="rounded-full object-cover relative z-10"
+            className="rounded-full object-cover relative z-10 w-32 h-32 md:w-72 md:h-72 flex-shrink-0"
           />
         </motion.div>
       </div>

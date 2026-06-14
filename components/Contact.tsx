@@ -2,9 +2,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { raleway } from "@/app/ui/fonts";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import LinkedInIcon from "@mui/icons-material/LinkedIn";
-import EmailIcon from "@mui/icons-material/Email";
+
 
 const contact = {
   email: "marsakatlaabhishek7168@gmail.com",
@@ -35,30 +33,6 @@ export default function Contact() {
         >
           Get In Touch
         </a>
-        <div className="flex gap-6 mt-2">
-          <a
-            href={contact.github}
-            target="_blank"
-            className="text-slate-400 hover:text-cyan-400 transition-colors duration-200"
-          >
-            <GitHubIcon fontSize="large" />
-          </a>
-
-          <a
-            href={contact.linkedin}
-            target="_blank"
-            className="text-slate-400 hover:text-cyan-400 transition-colors duration-200"
-          >
-            <LinkedInIcon fontSize="large" />
-          </a>
-
-          <a
-            href={`mailto:${contact.email}`}
-            className="text-slate-400 hover:text-cyan-400 transition-colors duration-200"
-          >
-            <EmailIcon fontSize="large" />
-          </a>
-        </div>
       </motion.div>
     </section>
   );
